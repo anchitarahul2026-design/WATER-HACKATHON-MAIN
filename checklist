@@ -1,0 +1,65 @@
+print("DRINKING WATER CREDIBILITY CHECK")
+print("--------------------------------")
+
+ph = float(input("Enter water pH: "))
+tds = float(input("Enter TDS in mg/L: "))
+turbidity = float(input("Enter turbidity in NTU: "))
+
+rust = input("Is there rust or brown water? (yes/no): ")
+smell = input("Is there an unusual smell? (yes/no): ")
+discharge = input("Is sewage or industrial discharge nearby? (yes/no): ")
+leak = input("Are any water pipes damaged or leaking? (yes/no): ")
+tank = input("Is the water tank uncovered or dirty? (yes/no): ")
+flood = input("Was the area recently flooded? (yes/no): ")
+
+warnings = 0
+
+if ph < 6.5 or ph > 8.5:
+    print("WARNING: pH is outside the reference range.")
+    warnings += 1
+
+if tds > 500:
+    print("WARNING: TDS is above 500 mg/L.")
+    warnings += 1
+
+if turbidity > 1:
+    print("WARNING: Water turbidity is elevated.")
+    warnings += 1
+
+if rust == "yes":
+    print("WARNING: Possible pipe corrosion.")
+    warnings += 1
+
+if smell == "yes":
+    print("WARNING: Investigate unusual smell.")
+    warnings += 1
+
+if discharge == "yes":
+    print("WARNING: Possible pollution source nearby.")
+    warnings += 1
+
+if leak == "yes":
+    print("WARNING: Inspect damaged water pipes.")
+    warnings += 1
+
+if tank == "yes":
+    print("WARNING: Clean and inspect the water tank.")
+    warnings += 1
+
+if flood == "yes":
+    print("WARNING: Possible floodwater contamination.")
+    warnings += 1
+
+print("--------------------------------")
+
+if warnings == 0:
+    print("No warning signs were reported.")
+    print("Water safety is NOT confirmed.")
+elif warnings <= 2:
+    print("CAUTION: Further water testing is recommended.")
+else:
+    print("HIGH CONCERN: Do not assume water is safe.")
+    print("Use a known safe alternative while")
+    print("seeking appropriate water-quality testing.")
+
+print("Warnings detected:", warnings)
