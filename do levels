@@ -1,0 +1,137 @@
+import streamlit as st
+import pandas as pd
+from datetime import datetime
+from pathlib import Path
+
+# ---------------- CONFIGURATION ----------------
+FILE = Path("water_readings.csv")
+
+st.set_page_config(page_title="AquaTrace",page_icon="💧",layout="wide")
+# ---------------- DATA STORAGE ----------------
+columns = ["timestamp","location","DO_mg_per_L","do_status"]
+if FILE.exists():
+    history = pd.read_csv(FILE)
+else:
+    history = pd.DataFrame(columns=columns)
+
+# ---------------- THRESHOLDS ----------------
+0st.sidebar.header("Screening thresholds")
+do_min = st.sidebar.number_input("Minimum dissolved oxygen (mg/L)",min_value=0.0,max_value=20.0,value=7.0,step=0.1,)
+# ---------------- MAIN INTERFACE ----------------
+st.title("AquaTrace")
+st.subheader("Water Quality Monitoring Prototype")
+st.info(
+    "Enter actual sensor readings or sample values for a demo. "
+    "Manual entries are not physical sensor measurements."
+)
+# ---------------- INPUT FORM ----------------
+with st.form("measurement_form"):
+    location = st.text_input("Water source / location",placeholder="e.g. Hostel water tank A")
+
+    mode = st.radio("Input mode",["Manual readings", "Demo readings"],horizontal=True)
+    if mode == "Manual readings":
+        dissolved_oxygen = st.number_input("Measured dissolved oxygen (mg/L)",min_value=0.0,max_value=20.0value=step=0.1)
+    else:
+        st.caption("These are illustrative values, not live sensor data.")
+        dissolved_oxygen=6.8
+        st.write(f"Demo dissolved oxygen: {dissolved_oxygen} mg/L")
+    submitted = st.form_submit_button("Analyze and Save Reading",type="primary")
+# ---------------- ANALYSIS ----------------
+if submitted:
+    if not location.strip():
+        st.error("Please enter a location.")
+    else:
+        do_status = (
+            "Above screening minimum"
+            if dissolved_oxygen >= do_min
+            else "Below screening minimum"
+
+        timestamp = datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+        new_record = pd.DataFrame([{
+            "timestamp": timestamp,
+            "location": location.strip(),
+        
+            "DO_mg_per_L": dissolved_oxygen,
+        
+            "DO_status":do_status
+        }])
+
+        history = pd.concat(
+            [history, new_record],
+            ignore_index=True
+        )
+
+        history.to_csv(FILE, index=False)
+
+        st.session_state["last_record"] = {
+            "location": location.strip(),
+      
+            "DO":dissolved_oxygen
+    
+            "DO_status":do_status
+            "timestamp": timestamp
+        }
+
+# ---------------- RESULTS ----------------
+
+if "last_record" in st.session_state:
+    result = st.session_state["last_record"]
+
+    st.divider()
+    st.header("Measurement Results")
+
+    col1 = st.columns(1)
+
+
+    with col1:
+        st.metric(
+            "Dissolved oxygen",
+            f'{result["DO"]} mg/L'
+        )
+        if result["DO_status"] == "Above screening minimum":
+            st.success(result["DO_status"])
+        else:
+            st.warning(result["DO_status"])
+    st.write("**Location:**", result["location"])
+    st.write("**Recorded at:**", result["timestamp"])
+
+    st.warning(
+        "These checks screen only one water-quality parameters. "
+        "They cannot establish whether water is safe to drink."
+    )
+
+# ---------------- HISTORY DASHBOARD ----------------
+
+st.divider()
+st.header("Measurement History")
+
+if not history.empty:
+    st.dataframe(
+        history,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    chart_data = history.copy()
+
+    chart_data["DO_mg_per_L"] = pd.to_numeric(
+        chart_data["DO_mg_per_L"], errors="coerce"
+    )
+
+    st.subheader("dissolved oxygen over time")
+    st.line_chart(chart_data.set_index("timestamp")["DO_mg_per_L"])
+    )
+
+    st.download_button(
+        "Download readings as CSV",
+        data=history.to_csv(index=False),
+        file_name="water_readings.csv",
+        mime="text/csv"
+    )
+else:
+    st.write(
+        "No readings recorded yet. Submit your first measurement above."
+    )
