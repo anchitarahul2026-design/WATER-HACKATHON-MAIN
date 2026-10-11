@@ -1,0 +1,118 @@
+"""
+TDS-only part of the water diagnosis rules (PySustain-2026).
+ 
+TDS = total dissolved solids, in mg/L.
+Limits: BIS IS 10500:2012 (500 acceptable, 2000 permissible when there is
+no alternative source). WHO has no health-based value for TDS, but says
+water becomes increasingly unpleasant to drink above about 1000 mg/L.
+"""
+ 
+TDS_ACCEPTABLE = 500    # mg/L, BIS acceptable
+TDS_UNPALATABLE = 1000  # mg/L, WHO taste threshold
+TDS_PERMISSIBLE = 2000  # mg/L, BIS permissible (no alternative source)
+ 
+ 
+def validate_tds(tds):
+    """Return an error message, or None if the value is valid."""
+    if tds < 0 or tds > 50000:
+        return "TDS must be between 0 and 50000 mg/L"
+    return None
+ 
+ 
+def diagnose_tds(tds, reports=None):
+    """
+    tds: reading in mg/L
+    reports: list of user-reported problems, e.g. ["salty_taste"]
+    Returns a dict with severity, problem, first_action and who_acts.
+    """
+    reports = reports or []
+ 
+    if tds > TDS_PERMISSIBLE:
+        severity = "high"
+        problem = "Very high dissolved salts (salinity or effluent)"
+        action = "Stop using for drinking; test the source; arrange alternative drinking water"
+        who = "Water board, groundwater authority"
+ 
+    elif tds > TDS_UNPALATABLE:
+        severity = "medium"
+        problem = "High dissolved salts, water likely tastes bad"
+        action = "Test the source; consider an alternative drinking source"
+        who = "Water board, groundwater authority"
+ 
+    elif tds > TDS_ACCEPTABLE:
+        severity = "low"
+        problem = "TDS above the BIS acceptable limit"
+        action = "Re-test; check the source for salinity or seepage"
+        who = "Water board"
+ 
+    else:
+        severity = "none"
+        problem = "TDS within the BIS acceptable limit"
+        action = "No action needed for TDS (this does not prove the water is safe)"
+        who = "None"
+ 
+    # Users also report a salty taste: raise the severity when it backs up the reading
+    if "salty_taste" in reports and tds > TDS_ACCEPTABLE:
+        severity = "high"
+        problem = "Salinity or industrial discharge confirmed by taste reports"
+        action = "Test the source; look for effluent or seawater intrusion"
+        who = "Water board, groundwater authority"
+ 
+    return {"severity": severity, "problem": problem,
+            "first_action": action, "who_acts": who}
+ 
+ 
+def ask_for_tds():
+    """Keep asking until the user types a valid TDS number."""
+    while True:
+        text = input("Enter the TDS reading in mg/L: ").strip()
+        try:
+            tds = float(text)
+        except ValueError:
+            print("Please type a number, for example 450.")
+            continue
+        error = validate_tds(tds)
+        if error:
+            print(error)
+            continue
+        return tds
+ 
+ 
+def ask_for_reports():
+    """Let the user pick what they have noticed. Returns a list of report keys."""
+    options = {
+        "1": "salty_taste",
+        "2": "smell",
+        "3": "cloudy",
+        "4": "no_supply",
+        "5": "low_pressure",
+    }
+    print("\nWhat else have you noticed? (type the numbers separated by commas, or press Enter for none)")
+    print("  1 = salty taste, 2 = bad smell, 3 = cloudy water, 4 = no supply, 5 = low pressure")
+    choice = input("Your choice: ").strip()
+    reports = []
+    for part in choice.split(","):
+        part = part.strip()
+        if part in options:
+            reports.append(options[part])
+    return reports
+ 
+ 
+if __name__ == "__main__":
+    print("=== TDS water check ===\n")
+    while True:
+        tds = ask_for_tds()
+        reports = ask_for_reports()
+        result = diagnose_tds(tds, reports)
+ 
+        print("\n--- Result ---")
+        print("Severity     :", result["severity"].upper())
+        print("Likely issue :", result["problem"])
+        print("First action :", result["first_action"])
+        print("Who acts     :", result["who_acts"])
+ 
+        again = input("\nCheck another reading? (y/n): ").strip().lower()
+        if again != "y":
+            print("Done.")
+            break
+        print()
