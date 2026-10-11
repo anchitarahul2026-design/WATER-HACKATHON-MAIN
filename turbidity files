@@ -1,0 +1,41 @@
+'''Turbidity	Interpretation
+≤ 1 NTU	Acceptable limit under the BIS standard
+> 1 to 5 NTU	Above the acceptable limit; up to 5 NTU is permitted under the standard only in the absence of an alternative source
+> 5 NTU	Exceeds the specified permissible limit'''
+
+
+#take multiple user data
+
+def interpret_turbidity(ntu):
+    if ntu < 0:
+        return "Invalid value: turbidity cannot be negative."
+    elif ntu <= 1:
+        return "Acceptable limit under the BIS standard."
+    elif ntu <= 5:
+        return ("Above the acceptable limit. Up to 5 NTU is permitted under the "
+                "standard only in the absence of an alternative source.")
+    else:
+        return "Exceeds the specified permissible limit."
+
+
+def main():
+    print("=== Water Turbidity Checker (BIS Standard) ===\n")
+
+    location = input("Enter location: ").strip()
+
+    try:
+        ntu = float(input("Enter turbidity (NTU): "))
+    except ValueError:
+        print("Please enter a valid number for turbidity.")
+        return
+
+    result = interpret_turbidity(ntu)
+
+    print("\n--- Result ---")
+    print(f"Location  : {location}")
+    print(f"Turbidity : {ntu} NTU")
+    print(f"Status    : {result}")
+
+
+if __name__ == "__main__":
+    main()
